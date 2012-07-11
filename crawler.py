@@ -53,29 +53,28 @@ class Scraper(Thread):
         if not output_directory:
             output_directory = os.getcwd()
         self.output = output_directory
-        Thread.__init__(self, name=name,  **args)
+        Thread.__init__(self, name=name, **args)
         self.session = requests.session()
 
     def run(self):
         if not os.path.exists(self.output):
             os.makedirs(self.output)
-        filename = os.path.join(self.output, self.getName()+".warc")
-        logging.debug("Creating file: %s"%filename)
+        filename = os.path.join(self.output, self.getName() + ".warc")
+        logging.debug("Creating file: %s" % filename)
         with open(filename,"ab") as fh:
             while self.queue.active():
                 with self.queue.consume_top() as link:
                     if link:
                         self.scrape(link, fh)
-            logging.info(self.getName()+" exiting")
+            logging.info(self.getName() + " exiting")
 
     def scrape(self, link, fh):
         (depth, url) = link
-        logging.info(self.getName()+" getting "+url)
+        logging.info(self.getName() + " getting " + url)
         try:
             response = self.session.get(url)
-
         except requests.exceptions.RequestException as ex:
-            logging.warn("Can't fetch url: %s error:%s"%(url,ex))
+            logging.warn("Can't fetch url: %s error: %s" % (url,ex))
             return 
 
         links = self.extract_links(response, depth)
@@ -107,11 +106,11 @@ class Scraper(Thread):
     def write(self,response, fh):
         
         request=response.request
-        request_id = "<uin:uuid:%s>"%uuid4()
-        response_id = "<uin:uuid:%s>"%uuid4()
+        request_id = "<uin:uuid:%s>" % uuid4()
+        response_id = "<uin:uuid:%s>" % uuid4()
         date = warc.warc_datetime_str(datetime.utcnow())
 
-        request_raw = ["%s %s HTTP/1.1"%(request.method, request.full_url)]
+        request_raw = ["%s %s HTTP/1.1" % (request.method, request.full_url)]
         request_raw.extend("%s: %s"%(k,v) for k,v in request.headers.iteritems())
         content = request._enc_data
         request_raw.extend([("Content-Length: %d"%len(content)),"",content])
@@ -247,12 +246,12 @@ def attr_extractor(*names):
         return _extractor
 
 def meta_extractor(attrs):
-    content = [value for key,value in attrs if key =="content" and value]
+    content = [value for key,value in attrs if key == "content" and value]
     urls = []
     for value in content:
         for pair in value.split(";"):
-            bits = pair.split("=",2)
-            if len(bits)>1 and bits[0].lower()=="url":
+            bits = pair.split("=", 2)
+            if len(bits) > 1 and bits[0].lower() == "url":
                 urls.append(bits[1].strip())
     return urls
                 
